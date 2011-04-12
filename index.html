@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-16">
+  <title>unicode dance party</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body { height: 100%; font-family}
+    #credits { font-family: Helvetica, arial, monospace; font-size: 10pt; }
+    #main { width: 500px;
+            height: 500px;
+            text-align: center;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin-left: -250px;
+            margin-top: -250px;
+            font-size: 300px;
+          }
+  </style>
+</head>
+<body>
+    <div id="credits">Playing with <a href="http://netpoetic.com/2011/04/unicode/">Joerg Piringer's unicode demo</a>.  Blame <a href="https://twitter.com/#!/davidascher/status/57587608435437568">David Ascher</a>.  <a href="http://www.archive.org/details/Midislut-Mindfluid11long">Music</a>.</div>
+    <div id="main"></div>
+    <audio id="tunes" autoplay>
+      <source src="http://ia600402.us.archive.org/6/items/Midislut-Mindfluid11long/Midislut-Mindfluid11long.ogg" type="audio/ogg" />
+      <source src="http://ia600402.us.archive.org/6/items/Midislut-Mindfluid11long/Midislut-Mindfluid11long.mp3" type="audio/mpeg" />
+    </audio>
+<script>
+
+var displayableChars;
+
+function load(url, callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  if (xhr.overrideMimeType) {
+    xhr.overrideMimeType("text/plain; charset=UTF-16");
+  }
+  xhr.setRequestHeader("If-Modified-Since", "Fri, 01 Jan 1960 00:00:00 GMT");
+  xhr.onreadystatechange = function(evt) {
+    callback(xhr.responseText);
+  };
+  xhr.send(null);
+}
+
+// https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/String/charAt#Example_3.3a.c2.a0Fixing_charAt_to_support_non-Basic-Multilingual-Plane_%28BMP%29.c2.a0characters
+function getWholeChar (str, i) {
+  var code = str.charCodeAt(i);
+
+  if (isNaN(code)) {
+    return ''; // Position not found
+  }
+
+  if (code < 0xD800 || code > 0xDFFF) {
+    return str.charAt(i);
+  }
+
+  // High surrogate (could change last hex to 0xDB7F to treat high private surrogates as single characters)
+  if (0xD800 <= code && code <= 0xDBFF) {
+    if (str.length <= (i+1))  {
+      throw 'High surrogate without following low surrogate';
+    }
+    var next = str.charCodeAt(i+1);
+    if (0xDC00 > next || next > 0xDFFF) {
+      throw 'High surrogate without following low surrogate';
+    }
+    return str.charAt(i)+str.charAt(i+1);
+  }
+
+  // Low surrogate (0xDC00 <= code && code <= 0xDFFF)
+  if (i === 0) {
+    throw 'Low surrogate without preceding high surrogate';
+  }
+  var prev = str.charCodeAt(i-1);
+
+  // (could change last hex to 0xDB7F to treat high private surrogates as single characters)
+  if (0xD800 > prev || prev > 0xDBFF) {
+    throw 'Low surrogate without preceding high surrogate';
+  }
+  return false; // We can pass over low surrogates now as the second component in a pair which we have already processed
+}
+
+function hitIt() {
+  var frameFunc = (function() {
+    var pos = 0,
+        div = document.getElementById('main'),
+        max = displayableChars.length - 1,
+        char;
+
+    return function() {
+      if (pos === max) {
+        return;
+      }
+      char = getWholeChar(displayableChars, pos);
+      pos++
+      if (char !== false) {
+        div.innerHTML = char;
+      }
+    };
+  })();
+
+  var audio = document.getElementById('tunes');
+  audio.addEventListener('canplay', function() {
+    window.setInterval(frameFunc, 1000/24);
+  }, false);
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  load('alldisplayablechars.txt',
+       function(text) {
+         displayableChars = text;
+         hitIt();
+       });
+}, false);
+</script>
+</body>
+</html>
