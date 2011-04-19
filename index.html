@@ -5,8 +5,8 @@
   <title>unicode dance party</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    html, body { height: 100%; font-family}
-    #credits { font-family: Helvetica, arial, monospace; font-size: 10pt; }
+    html, body { height: 100%; font-family: Helvetica, arial, monospace; }
+    #credits { font-size: 10pt; }
     #main { width: 500px;
             height: 500px;
             text-align: center;
@@ -20,7 +20,7 @@
   </style>
 </head>
 <body>
-    <div id="credits">Playing with <a href="http://netpoetic.com/2011/04/unicode/">Joerg Piringer's unicode demo</a>.  Blame <a href="https://twitter.com/#!/davidascher/status/57587608435437568">David Ascher</a>.  <a href="http://www.archive.org/details/Midislut-Mindfluid11long">Music</a>.</div>
+    <div id="credits">Playing with <a href="http://netpoetic.com/2011/04/unicode/">Joerg Piringer's unicode demo</a>.  Blame <a href="https://twitter.com/#!/davidascher/status/57587608435437568">David Ascher</a>.  <a href="http://www.archive.org/details/Midislut-Mindfluid11long">Music</a>. <a href="https://github.com/humphd/unicode">Code</a> by @<a href="http://twitter.com/humphd">humphd</a>.</div>
     <div id="main"></div>
     <audio id="tunes" autoplay>
       <source src="http://ia600402.us.archive.org/6/items/Midislut-Mindfluid11long/Midislut-Mindfluid11long.ogg" type="audio/ogg" />
@@ -28,15 +28,12 @@
     </audio>
 <script>
 
-var displayableChars;
-
 function load(url, callback) {
   var xhr = new XMLHttpRequest();
   xhr.open("GET", url, true);
   if (xhr.overrideMimeType) {
     xhr.overrideMimeType("text/plain; charset=UTF-16");
   }
-  xhr.setRequestHeader("If-Modified-Since", "Fri, 01 Jan 1960 00:00:00 GMT");
   xhr.onreadystatechange = function(evt) {
     callback(xhr.responseText);
   };
@@ -80,7 +77,7 @@ function getWholeChar (str, i) {
   return false; // We can pass over low surrogates now as the second component in a pair which we have already processed
 }
 
-function hitIt() {
+function hitIt(displayableChars) {
   var frameFunc = (function() {
     var pos = 0,
         div = document.getElementById('main'),
@@ -89,6 +86,7 @@ function hitIt() {
 
     return function() {
       if (pos === max) {
+        div.innerHTML = 'finis.';
         return;
       }
       char = getWholeChar(displayableChars, pos);
@@ -105,13 +103,9 @@ function hitIt() {
   }, false);
 }
 
-window.addEventListener('DOMContentLoaded', function() {
-  load('alldisplayablechars.txt',
-       function(text) {
-         displayableChars = text;
-         hitIt();
-       });
-}, false);
+window.addEventListener('DOMContentLoaded',
+                        function() { load('alldisplayablechars.txt', hitIt); },
+                        false);
 </script>
 </body>
 </html>
